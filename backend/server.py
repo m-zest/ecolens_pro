@@ -624,18 +624,37 @@ async def list_public_submissions(limit: int = 48):
 
 @api.post("/submissions", response_model=SubmissionReport)
 async def create_submission(payload: SubmissionCreate):
+    logger.info(
+        "Submission: name=%r material=%r weight_g=%s public=%s",
+        payload.name, payload.material, payload.weight_g, payload.is_public,
+    )
     report = estimate_report(payload)
     doc = report.model_dump()
     doc["created_at"] = report.created_at.isoformat()
     doc["input"] = payload.model_dump()
     doc["is_public"] = bool(payload.is_public)
-    await db.submissions.insert_one(doc.copy())
+    #  Best-effort insert. If Mongo is slow/unreachable, still hand the
+    #  computed report back to the user — they can see the score even if
+    #  we can't persist it yet. The card.png endpoint would 404 but the
+    #  primary result (grade + reasoning) is already on screen.
+    try:
+        await db.submissions.insert_one(doc.copy())
+    except Exception as e:
+        logger.error("Submission insert failed (returning report anyway): %s", e)
     return report
+
+
+async def _safe_find_submission(sid: str) -> Optional[dict]:
+    try:
+        return await db.submissions.find_one({"id": sid}, {"_id": 0})
+    except Exception as e:
+        logger.error("find_one for submission %s failed: %s", sid, e)
+        return None
 
 
 @api.get("/submissions/{sid}", response_model=SubmissionReport)
 async def get_submission(sid: str):
-    doc = await db.submissions.find_one({"id": sid}, {"_id": 0})
+    doc = await _safe_find_submission(sid)
     if not doc:
         raise HTTPException(404, "Submission not found")
     if isinstance(doc["created_at"], str):
@@ -645,7 +664,7 @@ async def get_submission(sid: str):
 
 @api.get("/submissions/{sid}/card.png")
 async def submission_card(sid: str, request: Request):
-    doc = await db.submissions.find_one({"id": sid}, {"_id": 0})
+    doc = await _safe_find_submission(sid)
     if not doc:
         raise HTTPException(404, "Submission not found")
     share_url = f"{_site_url(request)}/submission/{sid}"
