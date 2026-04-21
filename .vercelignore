@@ -1,0 +1,15 @@
+node_modules/
+frontend/node_modules/
+frontend/build/
+.venv/
+.env
+.env.*
+backend/.env
+frontend/.env
+test_reports/
+memory/
+test_result.md
+tests/
+backend/tests/
+*.pyc
+__pycache__/

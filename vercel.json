@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd frontend && yarn install --frozen-lockfile && yarn build",
+  "outputDirectory": "frontend/build",
+  "installCommand": "echo 'deferring install to buildCommand'",
+  "framework": null,
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 30,
+      "memory": 1024,
+      "includeFiles": "backend/**"
+    }
+  },
+  "rewrites": [
+    { "source": "/share/:path*", "destination": "/api/index" },
+    { "source": "/((?!api/|share/|static/|assets/|favicon\\.svg|manifest\\.json|robots\\.txt|asset-manifest\\.json).*)", "destination": "/index.html" }
+  ]
+}
