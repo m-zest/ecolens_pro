@@ -4,6 +4,7 @@
   "outputDirectory": "frontend/build",
   "installCommand": "echo 'deferring install to buildCommand'",
   "framework": null,
+
   "functions": {
     "api/index.py": {
       "maxDuration": 30,
@@ -11,8 +12,14 @@
       "includeFiles": "backend/**"
     }
   },
+
   "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/index" },   ← ✅ ADD THIS
     { "source": "/share/:path*", "destination": "/api/index" },
-    { "source": "/((?!api/|share/|static/|assets/|favicon\\.svg|manifest\\.json|robots\\.txt|asset-manifest\\.json).*)", "destination": "/index.html" }
+
+    {
+      "source": "/((?!api/|share/|static/|assets/|favicon\\.svg|manifest\\.json|robots\\.txt|asset-manifest\\.json).*)",
+      "destination": "/index.html"
+    }
   ]
 }
