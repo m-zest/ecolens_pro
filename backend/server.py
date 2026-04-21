@@ -37,6 +37,7 @@ import seed_data
 import ai
 import i18n as i18n_module
 import share_card
+import certifi
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -46,11 +47,17 @@ DB_NAME = os.environ["DB_NAME"]
 # Public site URL (used to build QR codes + OG links). Falls back to the request host.
 PUBLIC_SITE_URL = os.environ.get("PUBLIC_SITE_URL", "").rstrip("/")
 
+# Vercel's Python serverless image doesn't carry a recent system CA bundle,
+# which makes Atlas abort the TLS handshake with TLSV1_ALERT_INTERNAL_ERROR.
+# Forcing certifi's bundle is the canonical fix.
 client = AsyncIOMotorClient(
     MONGO_URL,
+    tls=True,
+    tlsCAFile=certifi.where(),
     serverSelectionTimeoutMS=5000,
     connectTimeoutMS=5000,
     socketTimeoutMS=15000,
+    retryWrites=True,
 )
 db = client[DB_NAME]
 
