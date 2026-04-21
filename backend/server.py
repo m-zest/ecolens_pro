@@ -309,6 +309,50 @@ async def stats():
     }
 
 
+@api.get("/debug/db")
+async def debug_db():
+    """Diagnostic: is Mongo reachable? how many docs? is the gallery seeded?
+
+    Hit this directly from a browser or curl to find out *why* the
+    gallery is empty. Three scenarios:
+      - mongo_ok=false → connection/auth/IP-allowlist issue
+      - mongo_ok=true, submissions_total=0 → seed never ran or got rolled back
+      - mongo_ok=true, submissions_public=0 → docs exist but none flagged is_public
+    """
+    try:
+        total = await db.submissions.count_documents({})
+        public = await db.submissions.count_documents({"is_public": True})
+        seed_marker = await db.submissions.find_one({"_marker": "gallery_seed"})
+        recent = []
+        cursor = (
+            db.submissions
+            .find({"is_public": True}, {"_id": 0, "id": 1, "input.name": 1, "created_at": 1})
+            .sort("created_at", -1)
+            .limit(5)
+        )
+        async for d in cursor:
+            recent.append({
+                "id": d.get("id"),
+                "name": (d.get("input") or {}).get("name"),
+                "created_at": d.get("created_at"),
+            })
+        return {
+            "mongo_ok": True,
+            "db_name": DB_NAME,
+            "submissions_total": total,
+            "submissions_public": public,
+            "gallery_seeded": seed_marker is not None,
+            "recent_public": recent,
+        }
+    except Exception as e:
+        return {
+            "mongo_ok": False,
+            "db_name": DB_NAME,
+            "error": str(e),
+            "error_type": type(e).__name__,
+        }
+
+
 @api.get("/i18n/{locale}")
 async def get_i18n(locale: str):
     if locale not in i18n_module.SUPPORTED:

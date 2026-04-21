@@ -1,9 +1,10 @@
 """
-Lightweight i18n for EcoLens. Covers four locales used in the D4PACK region:
+Lightweight i18n for EcoLens. Covers the D4PACK programme region:
   en — English (default)
   it — Italian
   de — German
   pl — Polish
+  hu — Hungarian
 
 Translations are intentionally scoped to a handful of high-impact UI strings and
 to the AI-narrative locale instruction. Raw LCA numbers and packaging names stay
@@ -11,7 +12,7 @@ in English (industry convention) so data remains comparable across locales.
 """
 from __future__ import annotations
 
-SUPPORTED = ["en", "it", "de", "pl"]
+SUPPORTED = ["en", "it", "de", "pl", "hu"]
 DEFAULT = "en"
 
 LANG_NAMES = {
@@ -19,6 +20,7 @@ LANG_NAMES = {
     "it": "Italian",
     "de": "German",
     "pl": "Polish",
+    "hu": "Hungarian",
 }
 
 
@@ -130,6 +132,31 @@ UI = {
         "stats.categories": "Kategorie żywności",
         "stats.avg_co2": "Średnie CO₂ na jednostkę",
         "stats.avg_rec": "Średnia recyklowalność (UE)",
+    },
+    "hu": {
+        "hero.issue": "Szám № 01 · Csomagolás, őszintén",
+        "hero.title_a": "A kartondoboz",
+        "hero.title_b": "a kezedben",
+        "hero.title_c": "egy",
+        "hero.title_d": "lábnyomot",
+        "hero.subtitle": "Az EcoLens a D4PACK program sűrű életciklus-adatait 30 másodperces történetté alakítja — CO₂, víz, eltarthatóság, kompromisszumok. Greenwashing nélkül, csak számok, jól elmesélve.",
+        "cta.open_catalogue": "Katalógus megnyitása",
+        "cta.score_packaging": "Csomagolás értékelése",
+        "cta.explore_data": "Adatok böngészése",
+        "cta.view_all": "Összes megtekintése",
+        "cta.compare": "Összehasonlítás",
+        "cta.share": "Megosztás",
+        "cta.copied": "Másolva",
+        "cta.download_card": "Kártya letöltése",
+        "nav.catalogue": "Katalógus",
+        "nav.compare": "Összehasonlítás",
+        "nav.submit": "Beküldés",
+        "nav.method": "Módszer",
+        "stats.title": "Gyors áttekintés",
+        "stats.count": "Katalogizált csomagolás",
+        "stats.categories": "Élelmiszer-kategóriák",
+        "stats.avg_co2": "Átlagos CO₂ egységenként",
+        "stats.avg_rec": "Átlagos újrahasznosíthatóság (EU)",
     },
 }
 

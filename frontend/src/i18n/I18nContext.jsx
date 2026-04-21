@@ -11,6 +11,7 @@ export const LOCALES = [
   { code: "it", label: "Italiano" },
   { code: "de", label: "Deutsch" },
   { code: "pl", label: "Polski" },
+  { code: "hu", label: "Magyar" },
 ];
 
 // English baseline — safe fallback if the backend is unreachable on first load.
