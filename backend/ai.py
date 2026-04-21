@@ -17,7 +17,7 @@ ANTHROPIC_MODEL = os.environ.get("AI_MODEL", "claude-sonnet-4-5-20250929")
 
 FIREWORKS_MODEL = os.environ.get(
     "FIREWORKS_MODEL",
-    "accounts/fireworks/models/qwen3-8b"  #  fast + stable
+    "accounts/fireworks/models/llama-v3p1-8b-instruct"  #  small, fast, widely available
 )
 FIREWORKS_BASE = "https://api.fireworks.ai/inference/v1/chat/completions"
 
@@ -94,9 +94,12 @@ async def _call_anthropic(prompt: str, system: str) -> str:
 
     client = anthropic.AsyncAnthropic(api_key=_anthropic_key())
 
+    #  5 slides of structured JSON need ~500-600 tokens of output room.
+    #  Anthropic counts tokens tightly — 300 truncates mid-JSON and then
+    #  _clean_json raises, falling through to the generic fallback.
     msg = await client.messages.create(
         model=ANTHROPIC_MODEL,
-        max_tokens=300,  #  reduced from 1200
+        max_tokens=800,
         system=system,
         messages=[{"role": "user", "content": prompt}],
     )
@@ -120,9 +123,11 @@ async def _call_openai_compatible(
         "Content-Type": "application/json",
     }
 
+    #  5-slide JSON needs ~400-500 tokens. 200 truncates → json.loads raises
+    #  → we'd fall through to the hardcoded generic fallback.
     body: dict[str, Any] = {
         "model": model,
-        "max_tokens": 200,  #  fast + safe
+        "max_tokens": 800,
         "temperature": 0.3,
         "response_format": {"type": "json_object"},
         "messages": [
@@ -131,9 +136,15 @@ async def _call_openai_compatible(
         ],
     }
 
-    async with httpx.AsyncClient(timeout=15.0) as http:  #  reduced timeout
+    async with httpx.AsyncClient(timeout=25.0) as http:
         r = await http.post(url, headers=headers, json=body)
-        r.raise_for_status()
+        if r.status_code >= 400:
+            #  Log the response body so the Vercel function logs show
+            #  *why* the provider rejected the request (bad model id,
+            #  auth, etc). Then raise — caller's try/except returns the
+            #  hardcoded fallback so the user still sees slides.
+            logger.error("provider %s returned %s: %s", url, r.status_code, r.text[:500])
+            r.raise_for_status()
         data = r.json()
 
     return data["choices"][0]["message"]["content"]

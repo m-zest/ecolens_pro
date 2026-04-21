@@ -401,9 +401,14 @@ async def generate_story(pid: str, req: StoryRequest):
     locale = req.locale or "en"
     tone = req.tone or "editorial"
 
-    cached = await db.stories.find_one(
-        {"packaging_id": pid, "tone": tone, "locale": locale}, {"_id": 0}
-    )
+    # Mongo cache read — never block the whole request on a Mongo hiccup.
+    cached = None
+    try:
+        cached = await db.stories.find_one(
+            {"packaging_id": pid, "tone": tone, "locale": locale}, {"_id": 0}
+        )
+    except Exception as e:
+        logger.warning("story cache read failed, falling through to AI: %s", e)
     if cached:
         return StoryResponse(**cached)
 
@@ -451,11 +456,15 @@ Data:
         raise HTTPException(502, f"AI story generation failed: {e}")
 
     response = StoryResponse(packaging_id=pid, tone=tone, locale=locale, slides=slides)
-    await db.stories.update_one(
-        {"packaging_id": pid, "tone": tone, "locale": locale},
-        {"$set": response.model_dump()},
-        upsert=True,
-    )
+    # Mongo cache write — best effort. If it fails, still return the story.
+    try:
+        await db.stories.update_one(
+            {"packaging_id": pid, "tone": tone, "locale": locale},
+            {"$set": response.model_dump()},
+            upsert=True,
+        )
+    except Exception as e:
+        logger.warning("story cache write failed (non-fatal): %s", e)
     return response
 
 
@@ -581,28 +590,36 @@ async def _maybe_seed_gallery() -> None:
 
 @api.get("/submissions", response_model=List[PublicSubmission])
 async def list_public_submissions(limit: int = 48):
-    """Public gallery: only returns submissions explicitly flagged is_public=True."""
-    await _maybe_seed_gallery()
-    cursor = db.submissions.find({"is_public": True}, {"_id": 0}).sort("created_at", -1).limit(min(limit, 100))
-    out = []
-    async for d in cursor:
-        created = d["created_at"]
-        if isinstance(created, str):
-            created = datetime.fromisoformat(created)
-        out.append(PublicSubmission(
-            id=d["id"],
-            created_at=created,
-            name=d["input"].get("name") or "Untitled",
-            category=d["input"].get("category", "—"),
-            material=d["input"].get("material", "—"),
-            format=d["input"].get("format", ""),
-            co2_kg=d["co2_kg"],
-            recyclability_pct=d["recyclability_pct"],
-            score_grade=d["score_grade"],
-            score_value=d["score_value"],
-            reasoning=d.get("reasoning", [])[:2],
-        ))
-    return out
+    """Public gallery: only returns submissions explicitly flagged is_public=True.
+
+    Never 500s — if Mongo is unreachable, returns an empty list so the
+    frontend can render the empty-state card instead of spinning forever.
+    """
+    try:
+        await _maybe_seed_gallery()
+        cursor = db.submissions.find({"is_public": True}, {"_id": 0}).sort("created_at", -1).limit(min(limit, 100))
+        out = []
+        async for d in cursor:
+            created = d["created_at"]
+            if isinstance(created, str):
+                created = datetime.fromisoformat(created)
+            out.append(PublicSubmission(
+                id=d["id"],
+                created_at=created,
+                name=d["input"].get("name") or "Untitled",
+                category=d["input"].get("category", "—"),
+                material=d["input"].get("material", "—"),
+                format=d["input"].get("format", ""),
+                co2_kg=d["co2_kg"],
+                recyclability_pct=d["recyclability_pct"],
+                score_grade=d["score_grade"],
+                score_value=d["score_value"],
+                reasoning=d.get("reasoning", [])[:2],
+            ))
+        return out
+    except Exception as e:
+        logger.error("list_public_submissions failed (returning empty): %s", e)
+        return []
 
 
 @api.post("/submissions", response_model=SubmissionReport)

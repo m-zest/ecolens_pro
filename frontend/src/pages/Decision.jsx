@@ -216,7 +216,7 @@ export default function Decision() {
           {/* Winner card + reasoning */}
           <section className="mt-20" data-testid="decision-winner">
             <div className="eyebrow mb-6">§ 2 · The call, with reasons</div>
-            <div className="ed-card p-8 md:p-12 bg-forest text-cream rounded-[28px] relative overflow-hidden">
+            <div className="p-8 md:p-12 rounded-[28px] relative overflow-hidden shadow-[0_20px_60px_rgba(26,54,45,0.18)] border border-forest/20" style={{ background: "#1A362D", color: "#F4F1EA" }}>
               <div className="absolute -right-10 -top-10 w-80 h-80 rounded-full bg-sage/20 blur-3xl" aria-hidden />
               <div className="relative grid lg:grid-cols-[1.1fr_1fr] gap-10 items-start">
                 <div>
