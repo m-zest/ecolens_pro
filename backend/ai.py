@@ -176,12 +176,13 @@ async def generate_json(prompt: str, system: str, session_id: str) -> Any:
         logger.error("AI failed: %s", str(e))
 
         #  FALLBACK (never break demo)
+        #  Each slide must carry an icon_hint — Pydantic StorySlide requires it.
         return {
             "slides": [
-                {"title": "Overview", "body": "Packaging impact summary."},
-                {"title": "CO₂", "body": "Moderate emissions based on material."},
-                {"title": "Recyclability", "body": "Depends on local systems."},
-                {"title": "Lifecycle", "body": "Production dominates impact."},
-                {"title": "Trade-off", "body": "Balance between durability and sustainability."}
+                {"title": "Overview", "body": "A quick read on this packaging's LCA profile — materials, energy, recovery.", "icon_hint": "leaf"},
+                {"title": "Carbon Story", "body": "Moderate emissions driven mainly by material production, not transport.", "icon_hint": "factory"},
+                {"title": "End of Life", "body": "Recovery depends on kerbside systems and format recyclability.", "icon_hint": "recycle"},
+                {"title": "Lifecycle", "body": "Production dominates the footprint; use-phase is minimal for packaging.", "icon_hint": "bolt"},
+                {"title": "Trade-off", "body": "Durability vs recyclability — the choice rarely satisfies both at once.", "icon_hint": "warning"},
             ]
         }

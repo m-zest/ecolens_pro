@@ -46,7 +46,12 @@ DB_NAME = os.environ["DB_NAME"]
 # Public site URL (used to build QR codes + OG links). Falls back to the request host.
 PUBLIC_SITE_URL = os.environ.get("PUBLIC_SITE_URL", "").rstrip("/")
 
-client = AsyncIOMotorClient(MONGO_URL)
+client = AsyncIOMotorClient(
+    MONGO_URL,
+    serverSelectionTimeoutMS=5000,
+    connectTimeoutMS=5000,
+    socketTimeoutMS=15000,
+)
 db = client[DB_NAME]
 
 app = FastAPI(title="EcoLens API", version="1.1.0")
@@ -455,9 +460,129 @@ Data:
 
 
 # ---------- Submissions ----------
+# A handful of plausible brand submissions we insert on first call so the
+# gallery isn't empty for the demo. Runs once — guarded by a marker doc.
+GALLERY_SEED: List[dict] = [
+    {
+        "name": "Verde Valley Oat Milk 1L",
+        "category": "Dairy",
+        "material": "Recycled PET",
+        "format": "1 L bottle",
+        "weight_g": 28.0,
+        "recycled_content_pct": 100.0,
+        "recyclable": True, "compostable": False,
+        "transport_km": 240, "shelf_life_days": 90,
+    },
+    {
+        "name": "Nordic Roast Coffee 250 g",
+        "category": "Pantry",
+        "material": "Multi-layer laminate pouch",
+        "format": "250 g valve pouch",
+        "weight_g": 12.0,
+        "recycled_content_pct": 15.0,
+        "recyclable": False, "compostable": False,
+        "transport_km": 1800, "shelf_life_days": 365,
+    },
+    {
+        "name": "Alpine Yoghurt 500 g",
+        "category": "Dairy",
+        "material": "Glass",
+        "format": "500 g returnable jar",
+        "weight_g": 260.0,
+        "recycled_content_pct": 65.0,
+        "recyclable": True, "compostable": False,
+        "transport_km": 180, "shelf_life_days": 21,
+    },
+    {
+        "name": "Terra Mushrooms Tray",
+        "category": "Produce",
+        "material": "Moulded pulp",
+        "format": "250 g tray",
+        "weight_g": 8.0,
+        "recycled_content_pct": 95.0,
+        "recyclable": True, "compostable": True,
+        "transport_km": 120, "shelf_life_days": 10,
+    },
+    {
+        "name": "Sunrise Granola 450 g",
+        "category": "Pantry",
+        "material": "Kraft Paper",
+        "format": "450 g gusseted bag",
+        "weight_g": 18.0,
+        "recycled_content_pct": 40.0,
+        "recyclable": True, "compostable": False,
+        "transport_km": 600, "shelf_life_days": 240,
+    },
+    {
+        "name": "Lago Sparkling Water 330 ml",
+        "category": "Beverages",
+        "material": "Recycled Aluminium",
+        "format": "330 ml can",
+        "weight_g": 14.0,
+        "recycled_content_pct": 75.0,
+        "recyclable": True, "compostable": False,
+        "transport_km": 420, "shelf_life_days": 540,
+    },
+    {
+        "name": "Cedar Grove Salad Bowl",
+        "category": "Food Service",
+        "material": "Sugarcane Bagasse",
+        "format": "750 ml bowl + lid",
+        "weight_g": 22.0,
+        "recycled_content_pct": 100.0,
+        "recyclable": False, "compostable": True,
+        "transport_km": 350, "shelf_life_days": 0,
+    },
+    {
+        "name": "Harvest Pasta 500 g",
+        "category": "Pantry",
+        "material": "Cardboard",
+        "format": "500 g rigid box",
+        "weight_g": 32.0,
+        "recycled_content_pct": 85.0,
+        "recyclable": True, "compostable": False,
+        "transport_km": 900, "shelf_life_days": 720,
+    },
+]
+
+
+async def _maybe_seed_gallery() -> None:
+    """Insert a handful of sample public submissions once, if the gallery is
+    empty. Guarded by a marker doc so cold starts don't race."""
+    try:
+        already = await db.submissions.find_one({"_marker": "gallery_seed"})
+        if already:
+            return
+        has_public = await db.submissions.find_one({"is_public": True})
+        if has_public:
+            await db.submissions.update_one(
+                {"_marker": "gallery_seed"},
+                {"$set": {"_marker": "gallery_seed", "seeded_at": datetime.now(timezone.utc).isoformat()}},
+                upsert=True,
+            )
+            return
+        for sample in GALLERY_SEED:
+            payload = SubmissionCreate(**sample, is_public=True)
+            report = estimate_report(payload)
+            doc = report.model_dump()
+            doc["created_at"] = report.created_at.isoformat()
+            doc["input"] = payload.model_dump()
+            doc["is_public"] = True
+            await db.submissions.insert_one(doc)
+        await db.submissions.update_one(
+            {"_marker": "gallery_seed"},
+            {"$set": {"_marker": "gallery_seed", "seeded_at": datetime.now(timezone.utc).isoformat()}},
+            upsert=True,
+        )
+        logger.info("Gallery seeded with %d sample submissions", len(GALLERY_SEED))
+    except Exception as e:
+        logger.error("Gallery seed failed: %s", e)
+
+
 @api.get("/submissions", response_model=List[PublicSubmission])
 async def list_public_submissions(limit: int = 48):
     """Public gallery: only returns submissions explicitly flagged is_public=True."""
+    await _maybe_seed_gallery()
     cursor = db.submissions.find({"is_public": True}, {"_id": 0}).sort("created_at", -1).limit(min(limit, 100))
     out = []
     async for d in cursor:

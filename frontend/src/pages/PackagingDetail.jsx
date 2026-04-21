@@ -104,7 +104,16 @@ export default function PackagingDetail() {
           </div>
           <div className="relative">
             <div className="absolute -inset-3 bg-ochre/30 rounded-[26px] rotate-[2deg] -z-10" aria-hidden />
-            <img src={p.image} alt={p.name} className="w-full h-[460px] md:h-[540px] object-cover rounded-[22px] shadow-[0_30px_80px_rgba(26,54,45,0.18)]" data-testid="detail-image" />
+            <img
+              src={p.image}
+              alt={p.name}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'><rect width='4' height='3' fill='%23EAE5D9'/><text x='2' y='1.7' font-family='serif' font-size='0.45' text-anchor='middle' fill='%231A362D' font-style='italic'>EcoLens</text></svg>`;
+              }}
+              className="w-full h-[460px] md:h-[540px] object-cover rounded-[22px] shadow-[0_30px_80px_rgba(26,54,45,0.18)]"
+              data-testid="detail-image"
+            />
           </div>
         </div>
       </section>

@@ -30,6 +30,9 @@ export default function Nav() {
           <NavLink to="/compare" data-testid="nav-compare" className={({ isActive }) => `${linkBase} link-underline ${isActive ? linkActive : ""}`}>
             {t("nav.compare")}
           </NavLink>
+          <NavLink to="/decision" data-testid="nav-decision" className={({ isActive }) => `${linkBase} link-underline ${isActive ? linkActive : ""}`}>
+            Decision
+          </NavLink>
           <NavLink to="/submit" data-testid="nav-submit" className={({ isActive }) => `${linkBase} link-underline ${isActive ? linkActive : ""}`}>
             {t("nav.submit")}
           </NavLink>

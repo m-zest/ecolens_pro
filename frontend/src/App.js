@@ -12,6 +12,7 @@ import Compare from "@/pages/Compare";
 import Submit from "@/pages/Submit";
 import About from "@/pages/About";
 import Gallery from "@/pages/Gallery";
+import Decision from "@/pages/Decision";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -35,6 +36,7 @@ export default function App() {
                 <Route path="/catalog" element={<Catalog />} />
                 <Route path="/packaging/:id" element={<PackagingDetail />} />
                 <Route path="/compare" element={<Compare />} />
+                <Route path="/decision" element={<Decision />} />
                 <Route path="/submit" element={<Submit />} />
                 <Route path="/gallery" element={<Gallery />} />
                 <Route path="/about" element={<About />} />

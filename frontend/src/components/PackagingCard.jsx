@@ -23,6 +23,10 @@ export default function PackagingCard({ p, featured = false }) {
           src={p.image}
           alt={p.name}
           loading="lazy"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'><rect width='4' height='3' fill='%23EAE5D9'/><text x='2' y='1.7' font-family='serif' font-size='0.45' text-anchor='middle' fill='%231A362D' font-style='italic'>EcoLens</text></svg>`;
+          }}
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] group-hover:scale-105"
         />
         <div className="absolute top-4 left-4 flex items-center gap-2">

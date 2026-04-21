@@ -41,11 +41,11 @@ export default function Landing() {
                 {t("hero.subtitle")}
               </p>
               <div className="mt-10 flex flex-wrap gap-3">
-                <Link to="/catalog" className="btn-primary inline-flex items-center gap-2" data-testid="hero-cta-explore">
-                  {t("cta.open_catalogue")} <ArrowRight className="w-4 h-4" />
+                <Link to="/decision" className="btn-primary inline-flex items-center gap-2" data-testid="hero-cta-decision">
+                  See the decision <ArrowRight className="w-4 h-4" />
                 </Link>
-                <Link to="/submit" className="btn-ghost inline-flex items-center gap-2" data-testid="hero-cta-submit">
-                  {t("cta.score_packaging")}
+                <Link to="/catalog" className="btn-ghost inline-flex items-center gap-2" data-testid="hero-cta-explore">
+                  {t("cta.open_catalogue")}
                 </Link>
               </div>
             </div>
@@ -54,6 +54,10 @@ export default function Landing() {
               <img
                 src="https://images.pexels.com/photos/12725398/pexels-photo-12725398.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1080"
                 alt="Editorial packaging hero"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><rect width='4' height='5' fill='%23EAE5D9'/><text x='2' y='2.9' font-family='serif' font-size='0.55' text-anchor='middle' fill='%231A362D' font-style='italic'>EcoLens</text></svg>`;
+                }}
                 className="rounded-[24px] w-full h-[520px] object-cover shadow-[0_30px_80px_rgba(26,54,45,0.18)]"
               />
               <div className="absolute bottom-5 left-5 right-5 bg-cream/95 backdrop-blur border border-forest/10 rounded-xl p-4 flex items-center justify-between">
