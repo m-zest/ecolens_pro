@@ -126,15 +126,15 @@ async def _call_openai_compatible(
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     body: dict[str, Any] = {
         "model": model,
-        "max_tokens": 1200,
-        "temperature": 0.5,
+        "max_tokens": 250,
+        "temperature": 0.3,
         "response_format": {"type": "json_object"},
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": prompt},
         ],
     }
-    async with httpx.AsyncClient(timeout=60.0) as http:
+    async with httpx.AsyncClient(timeout=20.0) as http:
         r = await http.post(url, headers=headers, json=body)
         r.raise_for_status()
         data = r.json()
