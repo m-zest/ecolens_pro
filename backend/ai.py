@@ -54,9 +54,22 @@ def is_configured() -> bool:
 # ------------------------
 def _clean_json(text: str) -> Any:
     text = text.strip()
-    text = re.sub(r"^```(?:json)?\s*", "", text)
+    #  Strip reasoning-model preambles (qwen3-*, deepseek-r1, etc. wrap their
+    #  output in <think>...</think> before the real answer — json.loads hates
+    #  that). Non-greedy, dotall, case-insensitive.
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r"^```(?:json)?\s*", "", text.strip())
     text = re.sub(r"\s*```$", "", text)
-    return json.loads(text)
+    text = text.strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        #  Last-chance rescue: pull the first balanced JSON object out of
+        #  whatever the model surrounded it with.
+        m = re.search(r"\{[\s\S]*\}", text)
+        if m:
+            return json.loads(m.group(0))
+        raise
 
 
 # ------------------------
@@ -94,12 +107,11 @@ async def _call_anthropic(prompt: str, system: str) -> str:
 
     client = anthropic.AsyncAnthropic(api_key=_anthropic_key())
 
-    #  5 slides of structured JSON need ~500-600 tokens of output room.
-    #  Anthropic counts tokens tightly — 300 truncates mid-JSON and then
-    #  _clean_json raises, falling through to the generic fallback.
+    #  5 slides × (6-word title + 45-word body + icon) ≈ 260 output tokens.
+    #  400 gives enough headroom without paying for slow long completions.
     msg = await client.messages.create(
         model=ANTHROPIC_MODEL,
-        max_tokens=800,
+        max_tokens=400,
         system=system,
         messages=[{"role": "user", "content": prompt}],
     )
@@ -123,11 +135,9 @@ async def _call_openai_compatible(
         "Content-Type": "application/json",
     }
 
-    #  5-slide JSON needs ~400-500 tokens. 200 truncates → json.loads raises
-    #  → we'd fall through to the hardcoded generic fallback.
     body: dict[str, Any] = {
         "model": model,
-        "max_tokens": 800,
+        "max_tokens": 400,
         "temperature": 0.3,
         "response_format": {"type": "json_object"},
         "messages": [
@@ -136,13 +146,11 @@ async def _call_openai_compatible(
         ],
     }
 
-    async with httpx.AsyncClient(timeout=25.0) as http:
+    #  Hard 8s ceiling — the demo should never block longer than that. If
+    #  the provider is slow we'd rather drop to the deterministic fallback.
+    async with httpx.AsyncClient(timeout=8.0) as http:
         r = await http.post(url, headers=headers, json=body)
         if r.status_code >= 400:
-            #  Log the response body so the Vercel function logs show
-            #  *why* the provider rejected the request (bad model id,
-            #  auth, etc). Then raise — caller's try/except returns the
-            #  hardcoded fallback so the user still sees slides.
             logger.error("provider %s returned %s: %s", url, r.status_code, r.text[:500])
             r.raise_for_status()
         data = r.json()
@@ -155,36 +163,31 @@ async def _call_openai_compatible(
 # ------------------------
 async def generate_json(prompt: str, system: str, session_id: str) -> Any:
     provider = _resolve_provider()
+    import time
 
+    t0 = time.time()
+    raw = ""
     try:
         if provider == "anthropic":
             raw = await _call_anthropic(prompt, system)
-            logger.info("AI via anthropic")
-
         elif provider == "fireworks":
             raw = await _call_openai_compatible(
-                FIREWORKS_BASE,
-                _fireworks_key(),
-                FIREWORKS_MODEL,
-                prompt,
-                system,
+                FIREWORKS_BASE, _fireworks_key(), FIREWORKS_MODEL, prompt, system,
             )
-            logger.info("AI via fireworks")
-
         else:
             raw = await _call_openai_compatible(
-                MINIMAX_BASE,
-                _minimax_key(),
-                MINIMAX_MODEL,
-                prompt,
-                system,
+                MINIMAX_BASE, _minimax_key(), MINIMAX_MODEL, prompt, system,
             )
-            logger.info("AI via minimax")
-
+        elapsed = time.time() - t0
+        logger.info("AI via %s in %.2fs, raw head=%r", provider, elapsed, raw[:300])
         return _clean_json(raw)
 
     except Exception as e:
-        logger.error("AI failed: %s", str(e))
+        elapsed = time.time() - t0
+        logger.error(
+            "AI failed via %s after %.2fs: %s | raw head=%r",
+            provider, elapsed, e, (raw or "")[:300],
+        )
 
         #  FALLBACK (never break demo)
         #  Each slide must carry an icon_hint — Pydantic StorySlide requires it.
