@@ -321,7 +321,7 @@ PACKAGINGS = [
         "category": "Snacks",
         "material": "PET/AL/PE laminate",
         "format": "200 g snack pouch",
-        "image": "https://images.unsplash.com/photo-1627843240043-b3f1e0d1c0b6?crop=entropy&cs=srgb&fm=jpg&q=85&w=940",
+        "image": "/decision-hero.jpg",
         "co2_kg": 0.022,
         "baseline_co2_kg": 0.028,
         "water_l": 0.3,
