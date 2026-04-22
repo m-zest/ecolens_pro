@@ -27,7 +27,11 @@ export default function PackagingCard({ p, featured = false }) {
             e.currentTarget.onerror = null;
             e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'><rect width='4' height='3' fill='%23EAE5D9'/><text x='2' y='1.7' font-family='serif' font-size='0.45' text-anchor='middle' fill='%231A362D' font-style='italic'>EcoLens</text></svg>`;
           }}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] group-hover:scale-105"
+          className={`absolute inset-0 w-full h-full transition-transform duration-[1.2s] group-hover:scale-105 ${
+            p.image?.startsWith("/")
+              ? "object-contain bg-cream p-3"
+              : "object-cover"
+          }`}
         />
         <div className="absolute top-4 left-4 flex items-center gap-2">
           <span className={`score-chip w-10 h-10 rounded-full border ${GRADE_COLOR[p.score_grade]} bg-cream/90 backdrop-blur`}>

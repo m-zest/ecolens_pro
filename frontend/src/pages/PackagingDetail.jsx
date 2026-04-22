@@ -111,7 +111,11 @@ export default function PackagingDetail() {
                 e.currentTarget.onerror = null;
                 e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'><rect width='4' height='3' fill='%23EAE5D9'/><text x='2' y='1.7' font-family='serif' font-size='0.45' text-anchor='middle' fill='%231A362D' font-style='italic'>EcoLens</text></svg>`;
               }}
-              className="w-full h-[460px] md:h-[540px] object-cover rounded-[22px] shadow-[0_30px_80px_rgba(26,54,45,0.18)]"
+              className={`w-full h-[460px] md:h-[540px] rounded-[22px] shadow-[0_30px_80px_rgba(26,54,45,0.18)] ${
+                p.image?.startsWith("/")
+                  ? "object-contain bg-cream p-4"
+                  : "object-cover"
+              }`}
               data-testid="detail-image"
             />
           </div>

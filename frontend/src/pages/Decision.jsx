@@ -153,15 +153,17 @@ export default function Decision() {
       <figure className="mt-14" data-testid="decision-product-hero">
         <div className="relative">
           <div className="absolute -inset-3 bg-sage/30 rounded-[28px] rotate-[-1deg] -z-10" aria-hidden />
-          <img
-            src="/decision-hero.jpg"
-            alt="GreenHarvest Foods fresh-cut potatoes in vacuum-sealed multi-layer pouch with EcoLens QR code"
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'><rect width='3' height='2' fill='%23EAE5D9'/><text x='1.5' y='1.2' font-family='serif' font-size='0.3' text-anchor='middle' fill='%231A362D' font-style='italic'>GreenHarvest · Fresh-cut potatoes</text></svg>`;
-            }}
-            className="w-full max-h-[560px] object-cover rounded-[22px] shadow-[0_30px_80px_rgba(26,54,45,0.18)] bg-cream-dark"
-          />
+          <div className="rounded-[22px] overflow-hidden bg-cream-dark shadow-[0_30px_80px_rgba(26,54,45,0.18)]">
+            <img
+              src="/decision-hero.jpg"
+              alt="GreenHarvest Foods fresh-cut potatoes in vacuum-sealed multi-layer pouch with EcoLens QR code"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'><rect width='3' height='2' fill='%23EAE5D9'/><text x='1.5' y='1.2' font-family='serif' font-size='0.3' text-anchor='middle' fill='%231A362D' font-style='italic'>GreenHarvest · Fresh-cut potatoes</text></svg>`;
+              }}
+              className="w-full h-auto max-h-[620px] object-contain mx-auto bg-cream"
+            />
+          </div>
         </div>
         <figcaption className="mt-5 flex flex-col md:flex-row md:items-baseline md:justify-between gap-2 border-t border-forest/10 pt-4">
           <div>
