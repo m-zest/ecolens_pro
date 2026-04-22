@@ -149,6 +149,35 @@ export default function Decision() {
         </div>
       </div>
 
+      {/* Editorial product hero — the real SKU the scenario refers to. */}
+      <figure className="mt-14" data-testid="decision-product-hero">
+        <div className="relative">
+          <div className="absolute -inset-3 bg-sage/30 rounded-[28px] rotate-[-1deg] -z-10" aria-hidden />
+          <img
+            src="/decision-hero.jpg"
+            alt="GreenHarvest Foods fresh-cut potatoes in vacuum-sealed multi-layer pouch with EcoLens QR code"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'><rect width='3' height='2' fill='%23EAE5D9'/><text x='1.5' y='1.2' font-family='serif' font-size='0.3' text-anchor='middle' fill='%231A362D' font-style='italic'>GreenHarvest · Fresh-cut potatoes</text></svg>`;
+            }}
+            className="w-full max-h-[560px] object-cover rounded-[22px] shadow-[0_30px_80px_rgba(26,54,45,0.18)] bg-cream-dark"
+          />
+        </div>
+        <figcaption className="mt-5 flex flex-col md:flex-row md:items-baseline md:justify-between gap-2 border-t border-forest/10 pt-4">
+          <div>
+            <div className="eyebrow !tracking-[0.28em]">The SKU · in the wild</div>
+            <p className="mt-2 text-forest/85 text-[15px] leading-relaxed max-w-2xl">
+              <span className="font-serif text-forest">GreenHarvest Foods · Fresh-Cut Potatoes · 500&nbsp;g vacuum pouch.</span>{" "}
+              Packed in the multi-layer barrier laminate EcoLens recommended (over D4PACK's paper pick), with a QR linking
+              the shopper back to this decision page. The whole story — on the pack.
+            </p>
+          </div>
+          <span className="shrink-0 inline-flex items-center gap-2 self-start md:self-end text-[11px] uppercase tracking-[0.2em] text-forest/60 font-mono">
+            QR → EcoLens
+          </span>
+        </figcaption>
+      </figure>
+
       {/* Loading / error */}
       {!items && !error && (
         <div className="mt-16 text-forest/60" data-testid="decision-loading">Loading scenario…</div>
